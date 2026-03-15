@@ -3,92 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>单词背诵卡片</title>
+    <title>主题分类单词检测 - 智能延迟复习</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             padding: 20px;
-        }
-        
-        .header {
-            color: white;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .stat-box {
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: white;
-            font-size: 0.9em;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 25px;
-            background: white;
-            color: #667eea;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            font-weight: 600;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        
-        button.active {
-            background: #ffd700;
             color: #333;
         }
-        
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .theme-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .theme-btn.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .theme-btn .count {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-left: 5px;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.95);
+            padding: 8px 16px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-item .number {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .stat-item.mastered { color: #52c41a; }
+        .stat-item.fuzzy { color: #faad14; }
+        .stat-item.pending { color: #1890ff; }
+
+        .delay-info {
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.85em;
+            color: #666;
+            display: none;
+        }
+
+        .delay-info.show {
+            display: block;
+        }
+
         .card-container {
             perspective: 1000px;
-            width: 90%;
+            width: 100%;
             max-width: 500px;
-            height: 300px;
-            margin-bottom: 30px;
+            height: 320px;
+            margin: 15px auto;
+            position: relative;
         }
-        
+
         .card {
             width: 100%;
             height: 100%;
@@ -97,510 +135,1159 @@
             transition: transform 0.6s;
             cursor: pointer;
         }
-        
+
         .card.flipped {
             transform: rotateY(180deg);
         }
-        
+
         .card-face {
             position: absolute;
             width: 100%;
             height: 100%;
             backface-visibility: hidden;
+            background: white;
             border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            background: white;
+            text-align: center;
         }
-        
-        .card-front {
+
+        .card-back {
+            transform: rotateY(180deg);
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
-        
-        .card-back {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            transform: rotateY(180deg);
-            color: white;
-        }
-        
-        .word {
-            font-size: 2.5em;
+
+        .word-title {
+            font-size: 2.2em;
             font-weight: bold;
-            color: #333;
+            color: #1a1a1a;
             margin-bottom: 10px;
-            text-align: center;
         }
-        
-        .phonetic {
-            font-size: 1.2em;
+
+        .word-phonetic {
+            font-size: 1.1em;
             color: #666;
+            font-family: 'Courier New', monospace;
             margin-bottom: 15px;
         }
-        
-        .meaning {
-            font-size: 2em;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        
-        .pos {
-            font-size: 1.1em;
-            opacity: 0.9;
-            background: rgba(255,255,255,0.3);
-            padding: 5px 15px;
-            border-radius: 15px;
-        }
-        
-        .hint {
-            position: absolute;
-            bottom: 20px;
-            font-size: 0.9em;
+
+        .word-hint {
             color: #999;
+            font-size: 0.85em;
+            margin-top: 15px;
         }
-        
-        .navigation {
-            display: flex;
-            gap: 20px;
-            align-items: center;
+
+        .word-type {
+            display: inline-block;
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-bottom: 12px;
         }
-        
-        .nav-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+        .word-meaning {
             font-size: 1.5em;
-            padding: 0;
+            color: #262626;
+            line-height: 1.5;
+            margin-bottom: 15px;
         }
-        
-        .progress-bar {
-            width: 200px;
-            height: 6px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 3px;
-            overflow: hidden;
+
+        .timer-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: #ff4d4f;
+            transition: width 0.1s linear;
+            border-radius: 20px 20px 0 0;
         }
-        
-        .progress-fill {
-            height: 100%;
-            background: white;
-            transition: width 0.3s;
-        }
-        
-        .list-view {
-            display: none;
-            width: 100%;
-            max-width: 800px;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            max-height: 70vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        }
-        
-        .list-view.active {
-            display: block;
-        }
-        
-        .list-item {
+
+        .controls {
             display: flex;
-            justify-content: space-between;
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            align-items: center;
-        }
-        
-        .list-item:hover {
-            background: #f5f5f5;
-            border-radius: 10px;
-        }
-        
-        .list-word {
-            font-weight: bold;
-            color: #667eea;
-            font-size: 1.2em;
-        }
-        
-        .list-meaning {
-            color: #666;
-        }
-        
-        .hide-btn {
+            gap: 15px;
             margin-top: 20px;
-            background: #ff6b6b;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 35px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-remember {
+            background: #52c41a;
             color: white;
         }
-        
-        @media print {
-            body {
-                background: white;
-            }
-            .controls, .navigation, .header {
-                display: none;
-            }
+
+        .btn-fuzzy {
+            background: #faad14;
+            color: white;
+        }
+
+        .btn-skip {
+            background: #d9d9d9;
+            color: #666;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-new { background: #e6f7ff; color: #1890ff; }
+        .status-review { background: #fff7e6; color: #faad14; }
+        .status-mastered { background: #f6ffed; color: #52c41a; }
+        .status-delayed { background: #f0f0f0; color: #999; }
+
+        .theme-tag {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: relative;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .big-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .theme-progress {
+            margin-bottom: 20px;
+        }
+
+        .theme-progress h4 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .progress-bar {
+            background: #f0f0f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #52c41a, #73d13d);
+            transition: width 0.3s;
+        }
+
+        .word-list {
+            margin-top: 15px;
+        }
+
+        .word-list h4 {
+            margin: 15px 0 10px 0;
+            color: #333;
+            font-size: 0.9em;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #f5f5f5;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .word-item.mastered { background: #f6ffed; }
+        .word-item.fuzzy { background: #fff7e6; }
+        .word-item.pending { background: #e6f7ff; }
+
+        .word-item .word-info {
+            flex: 1;
+        }
+
+        .word-item .word-title-small {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .word-item .word-meaning-small {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .word-item .word-stats {
+            text-align: right;
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+            z-index: 1001;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .start-btn {
+            background: white;
+            color: #667eea;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .completion-screen {
+            display: none;
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .completion-screen.active {
+            display: block;
+        }
+
+        .completion-stats {
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 20px auto;
+            text-align: left;
+        }
+
+        .shortcut-hint {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8em;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
             .card-container {
-                page-break-after: always;
-                height: 250px;
-                margin: 20px auto;
+                height: 280px;
             }
-            .card {
-                transform: none !important;
+            .word-title {
+                font-size: 1.8em;
             }
-            .card-back {
-                display: none;
+            .word-meaning {
+                font-size: 1.2em;
+            }
+            .theme-btn {
+                padding: 8px 15px;
+                font-size: 0.85em;
             }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📚 单词背诵卡片</h1>
-        <p>点击卡片翻转 | 使用按钮切换</p>
+        <h1>📚 主题分类单词检测</h1>
+        <p>智能延迟复习 · 模糊单词间隔出现</p>
     </div>
-    
-    <div class="stats">
-        <div class="stat-box">总单词: <span id="total">0</span></div>
-        <div class="stat-box">当前: <span id="current">1</span></div>
-        <div class="stat-box">已掌握: <span id="mastered">0</span></div>
-    </div>
-    
-    <div class="controls">
-        <button onclick="shuffleCards()">🔀 随机打乱</button>
-        <button onclick="toggleList()">📋 列表模式</button>
-        <button onclick="resetProgress()">🔄 重置进度</button>
-        <button onclick="window.print()">🖨️ 打印卡片</button>
-    </div>
-    
-    <div class="card-container" id="cardContainer">
-        <div class="card" id="card" onclick="flipCard()">
-            <div class="card-face card-front">
-                <div class="word" id="cardWord">Word</div>
-                <div class="phonetic" id="cardPhonetic">/wɜːrd/</div>
-                <div class="hint">点击翻转查看释义</div>
+
+    <div id="app">
+        <!-- 主题选择 -->
+        <div class="theme-selector" id="themeSelector">
+            <button class="theme-btn active" onclick="selectTheme('all')">
+                全部主题<span class="count" id="count-all">0</span>
+            </button>
+            <button class="theme-btn" onclick="selectTheme('describing')">
+                描述类<span class="count" id="count-describing">0</span>
+            </button>
+            <button class="theme-btn" onclick="selectTheme('attitude')">
+                态度观点<span class="count" id="count-attitude">0</span>
+            </button>
+            <button class="theme-btn" onclick="selectTheme('environment')">
+                环境工业<span class="count" id="count-environment">0</span>
+            </button>
+            <button class="theme-btn" onclick="selectTheme('society')">
+                社会人文<span class="count" id="count-society">0</span>
+            </button>
+            <button class="theme-btn" onclick="selectTheme('action')">
+                行为动作<span class="count" id="count-action">0</span>
+            </button>
+        </div>
+
+        <!-- 统计栏 -->
+        <div class="stats-bar" id="statsBar" style="display:none;">
+            <div class="stat-item mastered">
+                <span>✅ 已掌握</span>
+                <span class="number" id="masteredCount">0</span>
             </div>
-            <div class="card-face card-back">
-                <div class="meaning" id="cardMeaning">单词释义</div>
-                <div class="pos" id="cardPos">词性</div>
+            <div class="stat-item fuzzy">
+                <span>🤔 需复习</span>
+                <span class="number" id="fuzzyCount">0</span>
+            </div>
+            <div class="stat-item pending">
+                <span>⏳ 待检测</span>
+                <span class="number" id="pendingCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span>📊 进度</span>
+                <span class="number" id="progressText">0/0</span>
+            </div>
+        </div>
+
+        <!-- 延迟复习提示 -->
+        <div class="delay-info" id="delayInfo">
+            💡 标记为"模糊"的单词将在后续随机出现，不会立即重复
+        </div>
+
+        <!-- 开始界面 -->
+        <div id="startScreen" class="empty-state">
+            <h2>准备开始检测</h2>
+            <p id="startDesc">从所有主题中随机抽取单词</p>
+            <p style="margin-top:10px;opacity:0.8;">规则：5秒内回忆释义并翻面<br>超时自动标记为"模糊"</p>
+            <button class="start-btn" onclick="startSession()">开始检测</button>
+        </div>
+
+        <!-- 卡片界面 -->
+        <div id="cardScreen" style="display:none;">
+            <div class="card-container">
+                <div class="card" id="card" onclick="flipCard()">
+                    <div class="timer-indicator" id="timerBar"></div>
+                    
+                    <div class="card-face card-front">
+                        <span class="status-badge" id="statusBadge">新词</span>
+                        <span class="theme-tag" id="themeTag">主题</span>
+                        <div class="word-title" id="frontWord">Word</div>
+                        <div class="word-phonetic" id="frontPhonetic">/wɜːrd/</div>
+                        <div class="word-hint">点击翻面或等待5秒自动翻面</div>
+                    </div>
+                    
+                    <div class="card-face card-back">
+                        <span class="word-type" id="backType">n.</span>
+                        <div class="word-meaning" id="backMeaning">释义</div>
+                        <div class="word-phonetic" id="backPhonetic" style="color:#999;font-size:1em;">/wɜːrd/</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls" id="controls">
+                <button class="btn btn-fuzzy" id="btnFuzzy" onclick="markFuzzy()" disabled>🤔 模糊 (F)</button>
+                <button class="btn btn-remember" id="btnRemember" onclick="markRemember()" disabled>✅ 记得 (R)</button>
+            </div>
+
+            <div class="shortcut-hint">
+                快捷键：空格键翻面 | R记得 | F模糊 | S跳过
+            </div>
+
+            <div class="controls" style="margin-top:15px;">
+                <button class="btn btn-skip" onclick="skipWord()">⏭ 跳过 (S)</button>
+                <button class="btn" style="background:#1890ff;color:white;" onclick="showStats()">📊 统计</button>
+            </div>
+        </div>
+
+        <!-- 完成界面 -->
+        <div id="completeScreen" class="completion-screen">
+            <h2>🎉 本轮检测完成！</h2>
+            <div class="completion-stats" id="completionStats"></div>
+            <button class="start-btn" onclick="continueFuzzy()">🔄 复习模糊单词</button>
+            <button class="start-btn" onclick="changeTheme()" style="margin-left:10px;background:#f0f0f0;color:#333;">切换主题</button>
+        </div>
+    </div>
+
+    <!-- 统计模态框 -->
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 掌握情况统计</h2>
+                <button class="close-btn" onclick="closeStats()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>总词数</h3>
+                        <div class="big-number" id="statTotal">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>已掌握</h3>
+                        <div class="big-number" style="color:#52c41a;" id="statMastered">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>需复习</h3>
+                        <div class="big-number" style="color:#faad14;" id="statFuzzy">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>掌握率</h3>
+                        <div class="big-number" style="color:#1890ff;" id="statRate">0%</div>
+                    </div>
+                </div>
+
+                <div id="themeStats"></div>
+                <div class="word-list" id="wordListContainer"></div>
             </div>
         </div>
     </div>
-    
-    <div class="navigation" id="navigation">
-        <button class="nav-btn" onclick="prevCard()">◀</button>
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <button class="nav-btn" onclick="nextCard()">▶</button>
-        <button class="nav-btn" onclick="markMastered()" style="background: #4ecdc4; color: white;">✓</button>
-    </div>
-    
-    <div class="list-view" id="listView">
-        <h2 style="margin-bottom: 20px; color: #333;">单词列表</h2>
-        <div id="listContent"></div>
-        <button class="hide-btn" onclick="toggleList()">返回卡片模式</button>
-    </div>
+
+    <div class="notification" id="notification"></div>
 
     <script>
-        const vocabulary = [
-            { word: "garage", phonetic: "/ɡəˈrɑːʒ/", meaning: "车库", pos: "n." },
-            { word: "hesitant", phonetic: "/ˈhezɪtənt/", meaning: "犹豫不决的", pos: "adj." },
-            { word: "cost", phonetic: "/kɔːst/", meaning: "花费", pos: "n./v." },
-            { word: "complete", phonetic: "/kəmˈpliːt/", meaning: "完成；完全的", pos: "v./adj." },
-            { word: "fertilizer", phonetic: "/ˈfɜːrtəlaɪzər/", meaning: "肥料", pos: "n." },
-            { word: "client", phonetic: "/ˈklaɪənt/", meaning: "客户", pos: "n." },
-            { word: "expense", phonetic: "/ɪkˈspens/", meaning: "费用", pos: "n." },
-            { word: "generally", phonetic: "/ˈdʒenrəli/", meaning: "一般地", pos: "adv." },
-            { word: "satisfactory", phonetic: "/ˌsætɪsˈfæktəri/", meaning: "满意的", pos: "adj." },
-            { word: "relay to", phonetic: "/rɪˈleɪ tu/", meaning: "指的是", pos: "phr." },
-            { word: "reality", phonetic: "/riˈæləti/", meaning: "事实", pos: "n." },
-            { word: "completely", phonetic: "/kəmˈpliːtli/", meaning: "完全地", pos: "adv." },
-            { word: "uneasy", phonetic: "/ʌnˈiːzi/", meaning: "不安的", pos: "adj." },
-            { word: "mourned", phonetic: "/mɔːrnd/", meaning: "哀悼", pos: "v." },
-            { word: "firmly", phonetic: "/ˈfɜːrmli/", meaning: "坚定地", pos: "adv." },
-            { word: "solid", phonetic: "/ˈsɑːlɪd/", meaning: "坚固的", pos: "adj." },
-            { word: "evidence", phonetic: "/ˈevɪdəns/", meaning: "证据", pos: "n." },
-            { word: "gradually", phonetic: "/ˈɡrædʒuəli/", meaning: "逐渐地", pos: "adv." },
-            { word: "encountered", phonetic: "/ɪnˈkaʊntərd/", meaning: "遇到", pos: "v." },
-            { word: "numerous", phonetic: "/ˈnuːmərəs/", meaning: "众多的", pos: "adj." },
-            { word: "apparently", phonetic: "/əˈpærəntli/", meaning: "显然", pos: "adv." },
-            { word: "properties", phonetic: "/ˈprɑːpərtiz/", meaning: "性质", pos: "n." },
-            { word: "vital", phonetic: "/ˈvaɪtl/", meaning: "重要的", pos: "adj." },
-            { word: "crucial", phonetic: "/ˈkruːʃl/", meaning: "关键的", pos: "adj." },
-            { word: "distinct", phonetic: "/dɪˈstɪŋkt/", meaning: "不同的", pos: "adj." },
-            { word: "commit", phonetic: "/kəˈmɪt/", meaning: "承诺；犯（错）", pos: "v." },
-            { word: "committed", phonetic: "/kəˈmɪtɪd/", meaning: "尽心尽力的", pos: "adj." },
-            { word: "academy", phonetic: "/əˈkædəmi/", meaning: "学院", pos: "n." },
-            { word: "academic", phonetic: "/ˌækəˈdemɪk/", meaning: "学术的", pos: "adj." },
-            { word: "consequence", phonetic: "/ˈkɑːnsəkwens/", meaning: "结果", pos: "n." },
-            { word: "circumstances", phonetic: "/ˈsɜːrkəmstænsɪz/", meaning: "条件；环境", pos: "n." },
-            { word: "substances", phonetic: "/ˈsʌbstənsɪz/", meaning: "物质", pos: "n." },
-            { word: "fossil", phonetic: "/ˈfɑːsl/", meaning: "化石", pos: "n." },
-            { word: "suspected", phonetic: "/səˈspektɪd/", meaning: "被怀疑的", pos: "v./adj." },
-            { word: "evolved", phonetic: "/ɪˈvɑːlvd/", meaning: "进化", pos: "v." },
-            { word: "incomplete", phonetic: "/ˌɪnkəmˈpliːt/", meaning: "不完整的", pos: "adj." },
-            { word: "uninterrupted", phonetic: "/ˌʌnɪntəˈrʌptɪd/", meaning: "不间断的", pos: "adj." },
-            { word: "untouched", phonetic: "/ʌnˈtʌtʃt/", meaning: "原封不动的", pos: "adj." },
-            { word: "indifferent", phonetic: "/ɪnˈdɪfrənt/", meaning: "漠不关心的", pos: "adj." },
-            { word: "administering", phonetic: "/ədˈmɪnɪstərɪŋ/", meaning: "管理", pos: "v." },
-            { word: "extend", phonetic: "/ɪkˈstend/", meaning: "扩大；延伸", pos: "v." },
-            { word: "suspended", phonetic: "/səˈspendɪd/", meaning: "中止", pos: "v./adj." },
-            { word: "operation", phonetic: "/ˌɑːpəˈreɪʃn/", meaning: "手术；操作", pos: "n." },
-            { word: "incident", phonetic: "/ˈɪnsɪdənt/", meaning: "事故；事件", pos: "n." },
-            { word: "subjective", phonetic: "/səbˈdʒektɪv/", meaning: "主观的", pos: "adj." },
-            { word: "weak", phonetic: "/wiːk/", meaning: "虚弱的", pos: "adj." },
-            { word: "exhausted", phonetic: "/ɪɡˈzɔːstɪd/", meaning: "筋疲力尽的", pos: "adj." },
-            { word: "conventional", phonetic: "/kənˈvenʃənl/", meaning: "常规的", pos: "adj." },
-            { word: "directions", phonetic: "/dəˈrekʃnz/", meaning: "方向；指南", pos: "n." },
-            { word: "consequences", phonetic: "/ˈkɑːnsəkwensɪz/", meaning: "结果", pos: "n." },
-            { word: "melts", phonetic: "/melts/", meaning: "融化", pos: "v." },
-            { word: "fit", phonetic: "/fɪt/", meaning: "适应；合适的", pos: "v./adj." },
-            { word: "timing", phonetic: "/ˈtaɪmɪŋ/", meaning: "时机", pos: "n." },
-            { word: "assessing", phonetic: "/əˈsesɪŋ/", meaning: "评估", pos: "v." },
-            { word: "confirming", phonetic: "/kənˈfɜːrmɪŋ/", meaning: "确认", pos: "v." },
-            { word: "defining", phonetic: "/dɪˈfaɪnɪŋ/", meaning: "下定义", pos: "v." },
-            { word: "awareness", phonetic: "/əˈwernəs/", meaning: "意识", pos: "n." },
-            { word: "election", phonetic: "/ɪˈlekʃn/", meaning: "选举", pos: "n." },
-            { word: "budget", phonetic: "/ˈbʌdʒɪt/", meaning: "预算", pos: "n." },
-            { word: "approach", phonetic: "/əˈproʊtʃ/", meaning: "方法；接近", pos: "n./v." },
-            { word: "standard", phonetic: "/ˈstændərd/", meaning: "标准", pos: "n./adj." },
-            { word: "material", phonetic: "/məˈtɪriəl/", meaning: "材料", pos: "n." },
-            { word: "profitable", phonetic: "/ˈprɑːfɪtəbl/", meaning: "有利可图的", pos: "adj." },
-            { word: "affordable", phonetic: "/əˈfɔːrdəbl/", meaning: "负担得起的", pos: "adj." },
-            { word: "reputation", phonetic: "/ˌrepjuˈteɪʃn/", meaning: "名声", pos: "n." },
-            { word: "conflict", phonetic: "/ˈkɑːnflɪkt/", meaning: "冲突", pos: "n./v." },
-            { word: "abstract", phonetic: "/ˈæbstrækt/", meaning: "抽象的", pos: "adj./n." },
-            { word: "producing", phonetic: "/prəˈduːsɪŋ/", meaning: "生产", pos: "v." },
-            { word: "rejected", phonetic: "/rɪˈdʒektɪd/", meaning: "拒绝", pos: "v./adj." },
-            { word: "application", phonetic: "/ˌæplɪˈkeɪʃn/", meaning: "申请；应用", pos: "n." },
-            { word: "conclusion", phonetic: "/kənˈkluːʒn/", meaning: "结论", pos: "n." },
-            { word: "express", phonetic: "/ɪkˈspres/", meaning: "表达", pos: "v." },
-            { word: "sincere", phonetic: "/sɪnˈsɪr/", meaning: "真诚的", pos: "adj." },
-            { word: "educators", phonetic: "/ˈedʒukeɪtərz/", meaning: "教育家", pos: "n." },
-            { word: "acknowledge", phonetic: "/əkˈnɑːlɪdʒ/", meaning: "承认；致谢", pos: "v." },
-            { word: "effective", phonetic: "/ɪˈfektɪv/", meaning: "有效的", pos: "adj." },
-            { word: "measures", phonetic: "/ˈmeʒərz/", meaning: "措施；测量", pos: "n./v." },
-            { word: "embracing", phonetic: "/ɪmˈbreɪsɪŋ/", meaning: "拥抱；欣然接受", pos: "v." },
-            { word: "determination", phonetic: "/dɪˌtɜːrmɪˈneɪʃn/", meaning: "决心", pos: "n." },
-            { word: "receipt", phonetic: "/rɪˈsiːt/", meaning: "收据；收到", pos: "n." },
-            { word: "impressed", phonetic: "/ɪmˈprest/", meaning: "印象深刻的", pos: "adj." },
-            { word: "highly thought", phonetic: "/ˈhaɪli θɔːt/", meaning: "高度评价", pos: "phr." },
-            { word: "theories", phonetic: "/ˈθiːriz/", meaning: "理论", pos: "n." },
-            { word: "proof", phonetic: "/pruːf/", meaning: "证明", pos: "n." },
-            { word: "gathered", phonetic: "/ˈɡæðərd/", meaning: "收集；聚集", pos: "v." },
-            { word: "indeed", phonetic: "/ɪnˈdiːd/", meaning: "确实", pos: "adv." },
-            { word: "fascinated", phonetic: "/ˈfæsɪneɪtɪd/", meaning: "着迷的", pos: "adj." },
-            { word: "amused", phonetic: "/əˈmjuːzd/", meaning: "使开心；被逗乐的", pos: "adj." },
-            { word: "attached", phonetic: "/əˈtætʃt/", meaning: "附上；依恋", pos: "v./adj." },
-            { word: "resistant", phonetic: "/rɪˈzɪstənt/", meaning: "有抵抗力的", pos: "adj." },
-            { word: "opposed", phonetic: "/əˈpoʊzd/", meaning: "反对的", pos: "adj." },
-            { word: "maintaining", phonetic: "/meɪnˈteɪnɪŋ/", meaning: "维护；保持", pos: "v." },
-            { word: "revealing", phonetic: "/rɪˈviːlɪŋ/", meaning: "揭示", pos: "v./adj." },
-            { word: "sparking", phonetic: "/ˈspɑːrkɪŋ/", meaning: "引发；冒火花", pos: "v." },
-            { word: "lasted", phonetic: "/ˈlæstɪd/", meaning: "持续", pos: "v." },
-            { word: "led", phonetic: "/led/", meaning: "导致；带领", pos: "v." },
-            { word: "paled", phonetic: "/peɪld/", meaning: "变苍白", pos: "v." },
-            { word: "rerooted", phonetic: "/riːˈruːtɪd/", meaning: "重新生根", pos: "v." },
-            { word: "rarely", phonetic: "/ˈrerli/", meaning: "很少；罕见地", pos: "adv." },
-            { word: "risk", phonetic: "/rɪsk/", meaning: "风险", pos: "n./v." },
-            { word: "recognition", phonetic: "/ˌrekəɡˈnɪʃn/", meaning: "识别；认可", pos: "n." },
-            { word: "carries on", phonetic: "/ˈkæriz ɑːn/", meaning: "继续做", pos: "phr." },
-            { word: "competition", phonetic: "/ˌkɑːmpəˈtɪʃn/", meaning: "竞争", pos: "n." },
-            { word: "boost", phonetic: "/buːst/", meaning: "加强；促进", pos: "v./n." },
-            { word: "comparison", phonetic: "/kəmˈpærɪsn/", meaning: "比较", pos: "n." },
-            { word: "sees through", phonetic: "/siːz θruː/", meaning: "看穿", pos: "phr." },
-            { word: "slightly", phonetic: "/ˈslaɪtli/", meaning: "轻微地", pos: "adv." },
-            { word: "potential", phonetic: "/pəˈtenʃl/", meaning: "潜力；潜在的", pos: "n./adj." },
-            { word: "temporary", phonetic: "/ˈtemprəri/", meaning: "暂时的", pos: "adj." },
-            { word: "collective", phonetic: "/kəˈlektɪv/", meaning: "共同的；集体的", pos: "adj." },
-            { word: "ends up", phonetic: "/endz ʌp/", meaning: "最终成为", pos: "phr." },
-            { word: "collaboration", phonetic: "/kəˌlæbəˈreɪʃn/", meaning: "合作", pos: "n." },
-            { word: "overlook", phonetic: "/ˌoʊvərˈlʊk/", meaning: "忽视；俯瞰", pos: "v." },
-            { word: "preserved", phonetic: "/prɪˈzɜːrvd/", meaning: "保护；保存", pos: "v./adj." },
-            { word: "priority", phonetic: "/praɪˈɔːrəti/", meaning: "优先事项", pos: "n." },
-            { word: "admiration", phonetic: "/ˌædməˈreɪʃn/", meaning: "钦佩", pos: "n." },
-            { word: "drizzle", phonetic: "/ˈdrɪzl/", meaning: "细雨", pos: "n./v." },
-            { word: "church", phonetic: "/tʃɜːrtʃ/", meaning: "教堂", pos: "n." },
-            { word: "witnessed", phonetic: "/ˈwɪtnəst/", meaning: "目睹", pos: "v." },
-            { word: "balcony", phonetic: "/ˈbælkəni/", meaning: "阳台", pos: "n." },
-            { word: "feathery", phonetic: "/ˈfeðəri/", meaning: "羽毛般的", pos: "adj." },
-            { word: "winked", phonetic: "/wɪŋkt/", meaning: "眨眼", pos: "v." },
-            { word: "swallow", phonetic: "/ˈswɑːloʊ/", meaning: "吞；燕子", pos: "v./n." },
-            { word: "dirt", phonetic: "/dɜːrt/", meaning: "泥土", pos: "n." },
-            { word: "faint", phonetic: "/feɪnt/", meaning: "微弱的；昏倒", pos: "adj./v." },
-            { word: "scented", phonetic: "/ˈsentɪd/", meaning: "有香味的", pos: "adj." },
-            { word: "carpet", phonetic: "/ˈkɑːrpɪt/", meaning: "地毯", pos: "n." },
-            { word: "blanketed", phonetic: "/ˈblæŋkɪtɪd/", meaning: "覆盖", pos: "v." },
-            { word: "parrots", phonetic: "/ˈpærəts/", meaning: "鹦鹉", pos: "n." }
-        ];
+        // 单词数据库 - 按主题分类
+        const wordDatabase = {
+            describing: [
+                {word: "vivid", phonetic: "/ˈvɪvɪd/", type: "adj.", meaning: "生动的，鲜明的", theme: "describing"},
+                {word: "respectively", phonetic: "/rɪˈspektɪvli/", type: "adv.", meaning: "分别地，各自地", theme: "describing"},
+                {word: "occasionally", phonetic: "/əˈkeɪʒnəli/", type: "adv.", meaning: "偶尔，间或", theme: "describing"},
+                {word: "barely", phonetic: "/ˈberli/", type: "adv.", meaning: "几乎不，仅仅", theme: "describing"},
+                {word: "simply", phonetic: "/ˈsɪmpli/", type: "adv.", meaning: "简单地；仅仅", theme: "describing"},
+                {word: "industrious", phonetic: "/ɪnˈdʌstriəs/", type: "adj.", meaning: "勤劳的，勤奋的", theme: "describing"},
+                {word: "sustainable", phonetic: "/səˈsteɪnəbl/", type: "adj.", meaning: "可持续的", theme: "describing"},
+                {word: "aggressive", phonetic: "/əˈɡresɪv/", type: "adj.", meaning: "侵略性的；咄咄逼人的", theme: "describing"},
+                {word: "increased", phonetic: "/ɪnˈkriːst/", type: "adj.", meaning: "增加的", theme: "describing"},
+                {word: "exposed", phonetic: "/ɪkˈspoʊzd/", type: "adj.", meaning: "暴露的", theme: "describing"},
+                {word: "potential", phonetic: "/pəˈtenʃl/", type: "adj./n.", meaning: "潜在的；潜力", theme: "describing"},
+                {word: "risky", phonetic: "/ˈrɪski/", type: "adj.", meaning: "危险的，有风险的", theme: "describing"},
+                {word: "worn", phonetic: "/wɔːrn/", type: "adj.", meaning: "磨损的", theme: "describing"}
+            ],
+            attitude: [
+                {word: "subjective", phonetic: "/səbˈdʒektɪv/", type: "adj.", meaning: "主观的", theme: "attitude"},
+                {word: "objective", phonetic: "/əbˈdʒektɪv/", type: "adj./n.", meaning: "客观的；目的", theme: "attitude"},
+                {word: "dismissive", phonetic: "/dɪsˈmɪsɪv/", type: "adj.", meaning: "轻蔑的，不屑一顾的", theme: "attitude"},
+                {word: "disappointed", phonetic: "/ˌdɪsəˈpɔɪntɪd/", type: "adj.", meaning: "失望的，沮丧的", theme: "attitude"},
+                {word: "negative", phonetic: "/ˈneɡətɪv/", type: "adj.", meaning: "否定的；消极的", theme: "attitude"},
+                {word: "concerned", phonetic: "/kənˈsɜːrnd/", type: "adj.", meaning: "关心的；担忧的", theme: "attitude"},
+                {word: "uncertain", phonetic: "/ʌnˈsɜːrtn/", type: "adj.", meaning: "不确定的", theme: "attitude"},
+                {word: "regret", phonetic: "/rɪˈɡret/", type: "n./v.", meaning: "后悔，遗憾", theme: "attitude"},
+                {word: "resistable", phonetic: "/rɪˈzɪstəbl/", type: "adj.", meaning: "可抵抗的", theme: "attitude"},
+                {word: "frank", phonetic: "/fræŋk/", type: "adj.", meaning: "坦率的，直率的", theme: "attitude"}
+            ],
+            environment: [
+                {word: "emissions", phonetic: "/ɪˈmɪʃnz/", type: "n.", meaning: "排放物", theme: "environment"},
+                {word: "industrialized", phonetic: "/ɪnˈdʌstriəlaɪzd/", type: "adj.", meaning: "工业化的", theme: "environment"},
+                {word: "urban", phonetic: "/ˈɜːrbən/", type: "adj.", meaning: "城市的", theme: "environment"},
+                {word: "rural", phonetic: "/ˈrʊrəl/", type: "adj.", meaning: "农村的", theme: "environment"},
+                {word: "sustainable", phonetic: "/səˈsteɪnəbl/", type: "adj.", meaning: "可持续的", theme: "environment"},
+                {word: "nursery", phonetic: "/ˈnɜːrsəri/", type: "n.", meaning: "托儿所；苗圃", theme: "environment"},
+                {word: "prison", phonetic: "/ˈprɪzn/", type: "n.", meaning: "监狱", theme: "environment"},
+                {word: "basement", phonetic: "/ˈbeɪsmənt/", type: "n.", meaning: "地下室", theme: "environment"}
+            ],
+            society: [
+                {word: "urban", phonetic: "/ˈɜːrbən/", type: "adj.", meaning: "城市的", theme: "society"},
+                {word: "rural", phonetic: "/ˈrʊrəl/", type: "adj.", meaning: "农村的", theme: "society"},
+                {word: "campaign", phonetic: "/kæmˈpeɪn/", type: "n.", meaning: "运动；活动", theme: "society"},
+                {word: "tournament", phonetic: "/ˈtʊənəmənt/", type: "n.", meaning: "锦标赛", theme: "society"},
+                {word: "demonstrations", phonetic: "/ˌdemənˈstreɪʃnz/", type: "n.", meaning: "示范；示威", theme: "society"},
+                {word: "migrations", phonetic: "/maɪˈɡreɪʃnz/", type: "n.", meaning: "迁移", theme: "society"},
+                {word: "regulations", phonetic: "/ˌreɡjuˈleɪʃnz/", type: "n.", meaning: "规定，规章", theme: "society"},
+                {word: "interactions", phonetic: "/ˌɪntərˈækʃnz/", type: "n.", meaning: "互动", theme: "society"}
+            ],
+            action: [
+                {word: "discussed", phonetic: "/dɪˈskʌst/", type: "v.", meaning: "讨论", theme: "action"},
+                {word: "wondered", phonetic: "/ˈwʌndərd/", type: "v.", meaning: "想知道", theme: "action"},
+                {word: "interpreting", phonetic: "/ɪnˈtɜːrprɪtɪŋ/", type: "v.", meaning: "口译；解释", theme: "action"},
+                {word: "defining", phonetic: "/dɪˈfaɪnɪŋ/", type: "v.", meaning: "下定义", theme: "action"},
+                {word: "observing", phonetic: "/əbˈzɜːrvɪŋ/", type: "v.", meaning: "观察", theme: "action"},
+                {word: "preventing", phonetic: "/prɪˈventɪŋ/", type: "v.", meaning: "预防", theme: "action"},
+                {word: "donating", phonetic: "/dəʊˈneɪtɪŋ/", type: "v.", meaning: "捐赠", theme: "action"},
+                {word: "purchased", phonetic: "/ˈpɜːrtʃəst/", type: "v.", meaning: "购买", theme: "action"},
+                {word: "maintained", phonetic: "/meɪnˈteɪnd/", type: "v.", meaning: "保持", theme: "action"},
+                {word: "linked", phonetic: "/lɪŋkt/", type: "v.", meaning: "连接", theme: "action"},
+                {word: "captured", phonetic: "/ˈkæptʃərd/", type: "v.", meaning: "捕获；占领", theme: "action"},
+                {word: "refused", phonetic: "/rɪˈfjuːzd/", type: "v.", meaning: "拒绝", theme: "action"},
+                {word: "operating", phonetic: "/ˈɒpəreɪtɪŋ/", type: "v.", meaning: "操作；运转", theme: "action"},
+                {word: "attending", phonetic: "/əˈtendɪŋ/", type: "v.", meaning: "出席", theme: "action"}
+            ],
+            concept: [
+                {word: "accuracy", phonetic: "/ˈækjərəsi/", type: "n.", meaning: "准确性", theme: "concept"},
+                {word: "concepts", phonetic: "/ˈkɒnsepts/", type: "n.", meaning: "概念", theme: "concept"},
+                {word: "insights", phonetic: "/ˈɪnsaɪts/", type: "n.", meaning: "洞察力", theme: "concept"},
+                {word: "relation", phonetic: "/rɪˈleɪʃn/", type: "n.", meaning: "关系", theme: "concept"},
+                {word: "interests", phonetic: "/ˈɪntrəsts/", type: "n.", meaning: "兴趣；利益", theme: "concept"},
+                {word: "preference", phonetic: "/ˈprefrəns/", type: "n.", meaning: "偏爱", theme: "concept"},
+                {word: "consumption", phonetic: "/kənˈsʌmpʃn/", type: "n.", meaning: "消费", theme: "concept"},
+                {word: "production", phonetic: "/prəˈdʌkʃn/", type: "n.", meaning: "生产；产品", theme: "concept"},
+                {word: "treatment", phonetic: "/ˈtriːtmənt/", type: "n.", meaning: "治疗；对待", theme: "concept"},
+                {word: "instructions", phonetic: "/ɪnˈstrʌkʃnz/", type: "n.", meaning: "指示", theme: "concept"},
+                {word: "inspections", phonetic: "/ɪnˈspekʃnz/", type: "n.", meaning: "检查", theme: "concept"},
+                {word: "exhibition", phonetic: "/ˌeksɪˈbɪʃn/", type: "n.", meaning: "展览", theme: "concept"},
+                {word: "presentation", phonetic: "/ˌpreznˈteɪʃn/", type: "n.", meaning: "演讲；呈现", theme: "concept"},
+                {word: "measure", phonetic: "/ˈmeʒər/", type: "n./v.", meaning: "方法；测量", theme: "concept"},
+                {word: "angles", phonetic: "/ˈæŋɡlz/", type: "n.", meaning: "角度", theme: "concept"},
+                {word: "cases", phonetic: "/ˈkeɪsɪz/", type: "n.", meaning: "案例", theme: "concept"},
+                {word: "trial", phonetic: "/ˈtraɪəl/", type: "n.", meaning: "审判；试验", theme: "concept"},
+                {word: "prize", phonetic: "/praɪz/", type: "n.", meaning: "奖品", theme: "concept"},
+                {word: "access", phonetic: "/ˈækses/", type: "n./v.", meaning: "进入；访问", theme: "concept"}
+            ]
+        };
 
+        // 主题名称映射
+        const themeNames = {
+            describing: "描述类",
+            attitude: "态度观点",
+            environment: "环境工业",
+            society: "社会人文",
+            action: "行为动作",
+            concept: "概念抽象",
+            all: "全部主题"
+        };
+
+        // 应用状态
+        let currentTheme = 'all';
+        let sessionWords = [];
+        let currentWord = null;
         let currentIndex = 0;
-        let mastered = new Set();
+        let timer = null;
+        let timeLeft = 5;
         let isFlipped = false;
+        
+        // 统计状态
+        let stats = {
+            mastered: new Set(),
+            fuzzy: new Set(),
+            forgottenCount: {},
+            themeStats: {}
+        };
 
+        // 延迟复习队列 - 关键数据结构
+        // 格式: [{word: string, delay: number, theme: string}]
+        let delayedQueue = [];
+        const DELAY_MIN = 3; // 最少间隔3个单词
+        const DELAY_MAX = 8; // 最多间隔8个单词
+
+        // 初始化
         function init() {
-            document.getElementById('total').textContent = vocabulary.length;
-            updateCard();
-            updateProgress();
-            generateList();
+            updateThemeCounts();
+            updateStats();
+        }
+
+        // 更新主题计数
+        function updateThemeCounts() {
+            document.getElementById('count-all').textContent = getAllWords().length;
+            Object.keys(wordDatabase).forEach(theme => {
+                const count = wordDatabase[theme].length;
+                const el = document.getElementById(`count-${theme}`);
+                if (el) el.textContent = count;
+            });
+        }
+
+        // 获取所有单词
+        function getAllWords() {
+            let all = [];
+            Object.values(wordDatabase).forEach(arr => all.push(...arr));
+            return all;
+        }
+
+        // 选择主题
+        function selectTheme(theme) {
+            currentTheme = theme;
             
-            // 键盘控制
-            document.addEventListener('keydown', (e) => {
-                if (e.key === ' ' || e.key === 'Enter') {
-                    e.preventDefault();
-                    flipCard();
-                } else if (e.key === 'ArrowLeft') {
-                    prevCard();
-                } else if (e.key === 'ArrowRight') {
-                    nextCard();
-                } else if (e.key === 'm' || e.key === 'M') {
-                    markMastered();
+            // 更新按钮状态
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新描述
+            const desc = theme === 'all' ? '从所有主题中随机抽取单词' : 
+                        `专注学习：${themeNames[theme]} (${wordDatabase[theme]?.length || 0}词)`;
+            document.getElementById('startDesc').textContent = desc;
+            
+            // 重置统计
+            resetStats();
+            updateStats();
+        }
+
+        // 重置统计
+        function resetStats() {
+            stats = {
+                mastered: new Set(),
+                fuzzy: new Set(),
+                forgottenCount: {},
+                themeStats: {}
+            };
+            delayedQueue = [];
+        }
+
+        // 开始检测
+        function startSession() {
+            // 获取单词
+            if (currentTheme === 'all') {
+                sessionWords = shuffle([...getAllWords()]);
+            } else {
+                sessionWords = shuffle([...wordDatabase[currentTheme]]);
+            }
+            
+            // 限制数量（可选）
+            // sessionWords = sessionWords.slice(0, 50);
+            
+            // 初始化遗忘计数
+            sessionWords.forEach(w => {
+                if (!stats.forgottenCount[w.word]) {
+                    stats.forgottenCount[w.word] = 0;
                 }
             });
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('completeScreen').classList.remove('active');
+            document.getElementById('cardScreen').style.display = 'block';
+            document.getElementById('statsBar').style.display = 'flex';
+            document.getElementById('delayInfo').classList.add('show');
+            
+            updateStats();
+            loadNextWord();
         }
 
-        function updateCard() {
-            const card = vocabulary[currentIndex];
-            document.getElementById('cardWord').textContent = card.word;
-            document.getElementById('cardPhonetic').textContent = card.phonetic;
-            document.getElementById('cardMeaning').textContent = card.meaning;
-            document.getElementById('cardPos').textContent = card.pos;
-            document.getElementById('current').textContent = currentIndex + 1;
+        // 打乱数组
+        function shuffle(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // 加载下一个单词 - 核心逻辑：处理延迟复习
+        function loadNextWord() {
+            // 1. 检查延迟队列中是否有到期的单词
+            const dueWord = checkDelayedQueue();
             
-            // 重置翻转状态
+            // 2. 决定下一个单词
+            if (dueWord) {
+                currentWord = dueWord;
+                showNotification('🔁 复习单词：' + currentWord.word);
+            } else {
+                // 获取待学习的新单词（未掌握且不在延迟队列中）
+                const availableWords = sessionWords.filter(w => {
+                    const inMastered = stats.mastered.has(w.word);
+                    const inDelayed = delayedQueue.some(d => d.word === w.word);
+                    return !inMastered && !inDelayed;
+                });
+                
+                if (availableWords.length === 0) {
+                    // 检查是否还有延迟中的单词
+                    if (delayedQueue.length > 0) {
+                        // 强制取出一个延迟单词（缩短延迟）
+                        currentWord = forcedDelayedWord();
+                    } else {
+                        showComplete();
+                        return;
+                    }
+                } else {
+                    currentWord = availableWords[0];
+                }
+            }
+            
+            // 重置状态
             isFlipped = false;
             document.getElementById('card').classList.remove('flipped');
+            document.getElementById('btnFuzzy').disabled = true;
+            document.getElementById('btnRemember').disabled = true;
             
-            // 标记已掌握
-            if (mastered.has(currentIndex)) {
-                document.querySelector('.card-front').style.background = 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
-            } else {
-                document.querySelector('.card-front').style.background = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
+            // 更新UI
+            updateCardUI();
+            startTimer();
+            updateStats();
+        }
+
+        // 检查延迟队列
+        function checkDelayedQueue() {
+            // 找到delay为0的单词
+            const idx = delayedQueue.findIndex(item => item.delay <= 0);
+            if (idx !== -1) {
+                const item = delayedQueue[idx];
+                delayedQueue.splice(idx, 1);
+                // 找到完整单词对象
+                return sessionWords.find(w => w.word === item.word) || 
+                       getAllWords().find(w => w.word === item.word);
             }
+            return null;
         }
 
-        function flipCard() {
-            isFlipped = !isFlipped;
-            document.getElementById('card').classList.toggle('flipped');
+        // 强制获取延迟单词（当没有新词时）
+        function forcedDelayedWord() {
+            if (delayedQueue.length === 0) return null;
+            // 排序：delay最小的优先
+            delayedQueue.sort((a, b) => a.delay - b.delay);
+            const item = delayedQueue.shift();
+            return sessionWords.find(w => w.word === item.word) || 
+                   getAllWords().find(w => w.word === item.word);
         }
 
-        function nextCard() {
-            if (currentIndex < vocabulary.length - 1) {
-                currentIndex++;
-                updateCard();
-                updateProgress();
-            }
-        }
-
-        function prevCard() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateCard();
-                updateProgress();
-            }
-        }
-
-        function markMastered() {
-            if (mastered.has(currentIndex)) {
-                mastered.delete(currentIndex);
-            } else {
-                mastered.add(currentIndex);
-            }
-            document.getElementById('mastered').textContent = mastered.size;
-            updateCard();
-        }
-
-        function updateProgress() {
-            const progress = ((currentIndex + 1) / vocabulary.length) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-        }
-
-        function shuffleCards() {
-            for (let i = vocabulary.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [vocabulary[i], vocabulary[j]] = [vocabulary[j], vocabulary[i]];
-            }
-            currentIndex = 0;
-            mastered.clear();
-            document.getElementById('mastered').textContent = '0';
-            updateCard();
-            updateProgress();
-            generateList();
-        }
-
-        function toggleList() {
-            const listView = document.getElementById('listView');
-            const cardContainer = document.getElementById('cardContainer');
-            const navigation = document.getElementById('navigation');
+        // 添加单词到延迟队列
+        function addToDelayedQueue(word) {
+            // 随机延迟3-8个单词后出现
+            const delay = Math.floor(Math.random() * (DELAY_MAX - DELAY_MIN + 1)) + DELAY_MIN;
             
-            if (listView.classList.contains('active')) {
-                listView.classList.remove('active');
-                cardContainer.style.display = 'block';
-                navigation.style.display = 'flex';
+            // 检查是否已在队列中
+            const existing = delayedQueue.find(item => item.word === word);
+            if (existing) {
+                // 更新延迟（取较大值）
+                existing.delay = Math.max(existing.delay, delay);
             } else {
-                listView.classList.add('active');
-                cardContainer.style.display = 'none';
-                navigation.style.display = 'none';
+                delayedQueue.push({
+                    word: word,
+                    delay: delay,
+                    theme: currentWord.theme
+                });
             }
         }
 
-        function generateList() {
-            const content = document.getElementById('listContent');
-            content.innerHTML = '';
-            
-            vocabulary.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `
-                    <div>
-                        <div class="list-word">${item.word} <span style="color:#999;font-size:0.8em;">${item.phonetic}</span></div>
-                        <div style="color:#999;font-size:0.9em;">${item.pos}</div>
-                    </div>
-                    <div class="list-meaning">${item.meaning}</div>
-                `;
-                div.onclick = () => {
-                    currentIndex = index;
-                    toggleList();
-                    updateCard();
-                    updateProgress();
-                };
-                content.appendChild(div);
+        // 更新延迟队列（每过一个单词，所有delay-1）
+        function updateDelayedQueue() {
+            delayedQueue.forEach(item => {
+                item.delay = Math.max(0, item.delay - 1);
             });
         }
 
-        function resetProgress() {
-            currentIndex = 0;
-            mastered.clear();
-            document.getElementById('mastered').textContent = '0';
-            updateCard();
-            updateProgress();
+        // 更新卡片UI
+        function updateCardUI() {
+            document.getElementById('frontWord').textContent = currentWord.word;
+            document.getElementById('frontPhonetic').textContent = currentWord.phonetic;
+            document.getElementById('backType').textContent = currentWord.type;
+            document.getElementById('backMeaning').textContent = currentWord.meaning;
+            document.getElementById('backPhonetic').textContent = currentWord.phonetic;
+            document.getElementById('themeTag').textContent = themeNames[currentWord.theme] || currentWord.theme;
+            
+            // 状态标签
+            const badge = document.getElementById('statusBadge');
+            if (stats.mastered.has(currentWord.word)) {
+                badge.className = 'status-badge status-mastered';
+                badge.textContent = '已掌握';
+            } else if (stats.fuzzy.has(currentWord.word)) {
+                badge.className = 'status-badge status-review';
+                badge.textContent = '需复习';
+            } else if (delayedQueue.some(d => d.word === currentWord.word)) {
+                badge.className = 'status-badge status-delayed';
+                badge.textContent = '延迟中';
+            } else {
+                badge.className = 'status-badge status-new';
+                badge.textContent = '新词';
+            }
         }
 
-        // 触摸滑动支持
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        document.getElementById('cardContainer').addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-
-        document.getElementById('cardContainer').addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-
-        function handleSwipe() {
-            if (touchEndX < touchStartX - 50) nextCard();
-            if (touchEndX > touchStartX + 50) prevCard();
+        // 计时器
+        function startTimer() {
+            timeLeft = 5;
+            updateTimerDisplay();
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft -= 0.1;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    autoFlip();
+                }
+            }, 100);
         }
 
+        function updateTimerDisplay() {
+            const pct = Math.max(0, (timeLeft / 5) * 100);
+            document.getElementById('timerBar').style.width = pct + '%';
+        }
+
+        // 翻面
+        function flipCard() {
+            if (isFlipped) return;
+            clearInterval(timer);
+            performFlip();
+        }
+
+        function autoFlip() {
+            performFlip();
+            setTimeout(() => {
+                if (isFlipped && !stats.fuzzy.has(currentWord.word)) {
+                    markFuzzy(true);
+                }
+            }, 800);
+        }
+
+        function performFlip() {
+            isFlipped = true;
+            document.getElementById('card').classList.add('flipped');
+            document.getElementById('btnFuzzy').disabled = false;
+            document.getElementById('btnRemember').disabled = false;
+        }
+
+        // 标记记得
+        function markRemember() {
+            if (!currentWord) return;
+            
+            stats.mastered.add(currentWord.word);
+            stats.fuzzy.delete(currentWord.word);
+            
+            // 从延迟队列中移除（如果在）
+            delayedQueue = delayedQueue.filter(item => item.word !== currentWord.word);
+            
+            // 更新主题统计
+            updateThemeStat(currentWord.theme, 'mastered');
+            
+            showNotification('✅ 已掌握：' + currentWord.word);
+            
+            // 更新延迟队列（关键：推进延迟计数）
+            updateDelayedQueue();
+            
+            loadNextWord();
+        }
+
+        // 标记模糊
+        function markFuzzy(auto = false) {
+            if (!currentWord) return;
+            
+            stats.forgottenCount[currentWord.word]++;
+            stats.fuzzy.add(currentWord.word);
+            stats.mastered.delete(currentWord.word);
+            
+            // 添加到延迟队列（关键：不立即重复）
+            addToDelayedQueue(currentWord.word);
+            
+            // 更新主题统计
+            updateThemeStat(currentWord.theme, 'fuzzy');
+            
+            if (!auto) {
+                showNotification('🤔 已标记，将在稍后复习：' + currentWord.word);
+            }
+            
+            // 更新延迟队列
+            updateDelayedQueue();
+            
+            loadNextWord();
+        }
+
+        // 跳过单词
+        function skipWord() {
+            clearInterval(timer);
+            showNotification('⏭ 已跳过：' + currentWord.word);
+            updateDelayedQueue();
+            loadNextWord();
+        }
+
+        // 更新主题统计
+        function updateThemeStat(theme, type) {
+            if (!stats.themeStats[theme]) {
+                stats.themeStats[theme] = { mastered: 0, fuzzy: 0, total: 0 };
+            }
+            if (type === 'mastered') {
+                stats.themeStats[theme].mastered++;
+            } else {
+                stats.themeStats[theme].fuzzy++;
+            }
+        }
+
+        // 更新统计栏
+        function updateStats() {
+            const mastered = stats.mastered.size;
+            const fuzzy = stats.fuzzy.size;
+            const pending = sessionWords.length - mastered;
+            
+            document.getElementById('masteredCount').textContent = mastered;
+            document.getElementById('fuzzyCount').textContent = fuzzy;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('progressText').textContent = `${mastered}/${sessionWords.length}`;
+        }
+
+        // 显示完成
+        function showComplete() {
+            document.getElementById('cardScreen').style.display = 'none';
+            document.getElementById('completeScreen').classList.add('active');
+            
+            const mastered = stats.mastered.size;
+            const total = sessionWords.length;
+            const rate = Math.round((mastered / total) * 100);
+            
+            document.getElementById('completionStats').innerHTML = `
+                <div style="text-align:center;margin-bottom:20px;">
+                    <div style="font-size:3em;font-weight:bold;color:#52c41a;">${rate}%</div>
+                    <div style="color:#666;">掌握率</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div style="background:#f6ffed;padding:15px;border-radius:10px;text-align:center;">
+                        <div style="font-size:1.5em;font-weight:bold;color:#52c41a;">${mastered}</div>
+                        <div style="font-size:0.9em;color:#666;">已掌握</div>
+                    </div>
+                    <div style="background:#fff7e6;padding:15px;border-radius:10px;text-align:center;">
+                        <div style="font-size:1.5em;font-weight:bold;color:#faad14;">${stats.fuzzy.size}</div>
+                        <div style="font-size:0.9em;color:#666;">需复习</div>
+                    </div>
+                </div>
+                ${delayedQueue.length > 0 ? `<div style="margin-top:15px;padding:10px;background:#e6f7ff;border-radius:8px;text-align:center;color:#1890ff;">还有 ${delayedQueue.length} 个单词在复习队列中</div>` : ''}
+            `;
+        }
+
+        // 继续复习模糊单词
+        function continueFuzzy() {
+            if (stats.fuzzy.size === 0) {
+                showNotification('🎉 没有需要复习的单词了！');
+                return;
+            }
+            
+            // 将模糊单词重新加入会话
+            const fuzzyWords = sessionWords.filter(w => stats.fuzzy.has(w.word) && !stats.mastered.has(w.word));
+            if (fuzzyWords.length === 0) {
+                showNotification('🎉 所有模糊单词已掌握！');
+                return;
+            }
+            
+            // 清空延迟队列，重新检测模糊单词
+            delayedQueue = [];
+            sessionWords = shuffle(fuzzyWords);
+            
+            document.getElementById('completeScreen').classList.remove('active');
+            document.getElementById('cardScreen').style.display = 'block';
+            loadNextWord();
+        }
+
+        // 切换主题
+        function changeTheme() {
+            document.getElementById('completeScreen').classList.remove('active');
+            document.getElementById('startScreen').style.display = 'block';
+            document.getElementById('statsBar').style.display = 'none';
+            document.getElementById('delayInfo').classList.remove('show');
+            resetStats();
+        }
+
+        // 显示统计
+        function showStats() {
+            const modal = document.getElementById('statsModal');
+            modal.classList.add('active');
+            
+            const total = sessionWords.length || getAllWords().length;
+            const mastered = stats.mastered.size;
+            const fuzzy = stats.fuzzy.size;
+            const rate = total > 0 ? Math.round((mastered / total) * 100) : 0;
+            
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statMastered').textContent = mastered;
+            document.getElementById('statFuzzy').textContent = fuzzy;
+            document.getElementById('statRate').textContent = rate + '%';
+            
+            // 主题进度
+            let themeHtml = '<div class="theme-progress"><h4>各主题掌握情况</h4>';
+            Object.keys(wordDatabase).forEach(theme => {
+                const words = wordDatabase[theme];
+                const themeMastered = words.filter(w => stats.mastered.has(w.word)).length;
+                const pct = Math.round((themeMastered / words.length) * 100);
+                themeHtml += `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.9em;">
+                            <span>${themeNames[theme]}</span>
+                            <span>${themeMastered}/${words.length} (${pct}%)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            themeHtml += '</div>';
+            document.getElementById('themeStats').innerHTML = themeHtml;
+            
+            // 单词列表
+            const container = document.getElementById('wordListContainer');
+            const wordsToShow = sessionWords.length > 0 ? sessionWords : getAllWords();
+            
+            let html = '<h4>单词详情</h4>';
+            
+            // 按主题分组
+            const byTheme = {};
+            wordsToShow.forEach(w => {
+                if (!byTheme[w.theme]) byTheme[w.theme] = [];
+                byTheme[w.theme].push(w);
+            });
+            
+            Object.keys(byTheme).forEach(theme => {
+                const themeWords = byTheme[theme];
+                const hasWords = themeWords.some(w => stats.mastered.has(w.word) || stats.fuzzy.has(w.word));
+                if (!hasWords && sessionWords.length === 0) return;
+                
+                html += `<h4 style="margin-top:20px;color:#667eea;">${themeNames[theme]}</h4>`;
+                themeWords.forEach(w => {
+                    const forgotten = stats.forgottenCount[w.word] || 0;
+                    let statusClass = 'pending';
+                    let statusText = '未检测';
+                    
+                    if (stats.mastered.has(w.word)) {
+                        statusClass = 'mastered';
+                        statusText = '✅ 已掌握';
+                    } else if (stats.fuzzy.has(w.word)) {
+                        statusClass = 'fuzzy';
+                        statusText = '🤔 需复习';
+                    }
+                    
+                    html += `
+                        <div class="word-item ${statusClass}">
+                            <div class="word-info">
+                                <div class="word-title-small">${w.word} <span style="color:#999;font-weight:normal;">${w.phonetic}</span></div>
+                                <div class="word-meaning-small">${w.meaning}</div>
+                            </div>
+                            <div class="word-stats">
+                                ${forgotten > 0 ? `<div style="color:#faad14;">遗忘${forgotten}次</div>` : ''}
+                                <div>${statusText}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function closeStats() {
+            document.getElementById('statsModal').classList.remove('active');
+        }
+
+        function showNotification(text) {
+            const notif = document.getElementById('notification');
+            notif.textContent = text;
+            notif.classList.add('show');
+            setTimeout(() => notif.classList.remove('show'), 2000);
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('cardScreen').style.display === 'none') return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isFlipped) flipCard();
+            } else if (e.code === 'KeyR' && isFlipped) {
+                markRemember();
+            } else if (e.code === 'KeyF' && isFlipped) {
+                markFuzzy();
+            } else if (e.code === 'KeyS') {
+                skipWord();
+            }
+        });
+
+        // 点击模态框外部关闭
+        document.getElementById('statsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeStats();
+        });
+
+        // 初始化
         init();
     </script>
 </body>
